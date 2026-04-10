@@ -271,106 +271,188 @@ How many nights would you like? (Maximum {max_nights} recommended)"""
         except Exception as e:
             print(f"Form parse error: {e}")
 
-    def _smart_extract(self, msg: str, original: str):
-        la = self.last_asked or ""
+    # Bad words that should never be extracted as city names
+    BAD_CITY_WORDS = {
+        "a", "an", "the", "for", "to", "from", "and", "or", "in", "on", "at",
+        "with", "by", "of", "up", "my", "me", "we", "us", "i", "it", "is",
+        "trip", "travel", "vacation", "holiday", "week", "a week", "one week",
+        "two weeks", "days", "nights", "budget", "check", "date", "plan",
+        "going", "need", "want", "would", "like", "please", "hello", "hi",
+        "flight", "hotel", "book", "people", "person", "traveler", "adult",
+        "yes", "no", "okay", "ok", "sure", "thanks", "thank",
+    }
 
+    def _is_valid_city(self, name: str) -> bool:
+        """Check if extracted text is a plausible city name."""
+        name = name.strip()
+        if not name or len(name) < 2:
+            return False
+        if re.match(r'^\d', name):
+            return False
+        if name.lower() in self.BAD_CITY_WORDS:
+            return False
+        # Reject date-like strings
+        if re.search(r'\d{4}', name):
+            return False
+        # Must have at least one letter
+        if not re.search(r'[A-Za-z]', name):
+            return False
+        return True
+
+    def _smart_extract(self, msg: str, original: str):
+        """
+        Extract trip info from user message.
+        Priority: context-based (last_asked) > pattern matching.
+        """
+        la = self.last_asked or ""
+        msg_l = msg.lower().strip()
+
+        # ── Context-based extraction (most reliable) ──
         if la == "origin_city":
-            self.trip.origin = self._clean_city(original)
+            city = self._extract_city_name(original)
+            if city: self.trip.origin = city
             return
+
         if la == "destination_city":
-            self.trip.destination = self._clean_city(original)
+            city = self._extract_city_name(original)
+            if city: self.trip.destination = city
             return
+
         if la == "checkin_date":
-            d = self._extract_date(msg)
+            d = self._extract_date(msg_l)
             if d: self.trip.checkin = d
             return
+
         if la == "checkout_date":
-            d = self._extract_date(msg)
+            d = self._extract_date(msg_l)
             if d:
                 self.trip.checkout = d
             else:
-                nights = self._extract_nights(msg)
+                nights = self._extract_nights(msg_l)
                 if nights and self.trip.checkin:
                     dt = datetime.strptime(self.trip.checkin, "%Y-%m-%d")
                     self.trip.checkout = (dt + timedelta(days=nights)).strftime("%Y-%m-%d")
             return
+
         if la == "budget":
-            b = self._extract_budget(msg)
+            b = self._extract_budget(original)
             if b: self.trip.budget = b
             return
+
         if la == "nonstop_preference":
-            self.trip.nonstop_preferred = any(w in msg for w in ["yes","yeah","yep","sure","nonstop","non-stop","direct","definitely","prefer","y"])
+            yes_words = ["yes","yeah","yep","sure","nonstop","non-stop","direct","definitely","prefer","y","ok","okay"]
+            no_words  = ["no","nope","nah","any","doesn't matter","don't mind","either","n"]
+            if any(w in msg_l for w in yes_words):
+                self.trip.nonstop_preferred = True
+            elif any(w in msg_l for w in no_words):
+                self.trip.nonstop_preferred = False
             return
+
         if la == "traveler_count":
-            n = self._extract_number(msg)
+            n = self._extract_number(msg_l)
             if n and 1 <= n <= 20:
                 self.trip.travelers = [TravelerProfile() for _ in range(n)]
             return
 
-        # General extraction from first message — extract ALL info at once
-        msg_lower = msg.lower()
+        # ── General extraction from free-form first message ──
+        # Step 1: Extract all ISO dates first (before anything else to avoid confusion)
+        all_dates = re.findall(r'\b(\d{4}-\d{2}-\d{2})\b', msg_l)
+        valid_dates = []
+        for d in all_dates:
+            try:
+                datetime.strptime(d, "%Y-%m-%d")
+                valid_dates.append(d)
+            except: pass
 
-        # ── Destination ──
+        if len(valid_dates) >= 2:
+            if not self.trip.checkin:  self.trip.checkin  = valid_dates[0]
+            if not self.trip.checkout: self.trip.checkout = valid_dates[1]
+        elif len(valid_dates) == 1:
+            if not self.trip.checkin: self.trip.checkin = valid_dates[0]
+
+        # Step 2: Remove date strings from msg before city extraction
+        msg_no_dates = re.sub(r'\b\d{4}-\d{2}-\d{2}\b', '', msg_l).strip()
+        original_no_dates = re.sub(r'\b\d{4}-\d{2}-\d{2}\b', '', original, flags=re.IGNORECASE).strip()
+
+        # Step 3: Extract destination
         if not self.trip.destination:
             dest_patterns = [
-                r'(?:go to|going to|visit|travel to|trip to|fly to|heading to|need to for|for)\s+([A-Za-z][A-Za-z\s]+?)(?:\s+trip|\s+from|\s+for|\s+check|\.|,|$)',
-                r'(?:to)\s+([A-Za-z][A-Za-z\s]+?)\s+(?:trip|vacation|holiday|travel)',
-                r'^([A-Za-z][A-Za-z\s]+?)\s+(?:trip|vacation|holiday)',
+                # "go to india", "travel to bali", "fly to paris"
+                r'\b(?:go to|going to|visit|travel to|fly to|heading to|trip to)\s+([A-Za-z][A-Za-z\s]{1,20}?)(?:\s+(?:from|for|check|on|with|budget|\d)|[.,!?]|$)',
+                # "to india from" / "to paris on"
+                r'\bto\s+([A-Za-z][A-Za-z\s]{1,20}?)\s+(?:from|check|on|for\s+\d|budget)',
+                # "to singapore" at end of sentence
+                r'\bto\s+([A-Za-z][A-Za-z\s]{1,15}?)(?:[.,!?]|$)',
+                # "india trip", "paris vacation"
+                r'\b([A-Za-z][A-Za-z\s]{1,15}?)\s+(?:trip|vacation|holiday|tour)\b',
             ]
             for pat in dest_patterns:
-                m = re.search(pat, msg, re.IGNORECASE)
+                m = re.search(pat, msg_no_dates, re.IGNORECASE)
                 if m:
-                    dest = m.group(1).strip().title()
-                    # Reject if it looks like a city we know as origin
-                    if len(dest) > 1 and not re.match(r'^\d', dest):
-                        self.trip.destination = dest
+                    candidate = m.group(1).strip().title()
+                    if self._is_valid_city(candidate):
+                        self.trip.destination = candidate
                         break
 
-        # ── Origin ──
+        # Step 4: Extract origin
         if not self.trip.origin:
             origin_patterns = [
-                r'from\s+([A-Za-z][A-Za-z\s]+?)(?:\s+check|\s+to|\s+on|\.|,|$)',
-                r'departing\s+(?:from\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+to|\.|,|$)',
-                r'leaving\s+(?:from\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+to|\.|,|$)',
+                # "from atlanta budget" / "from chicago check"
+                r'\bfrom\s+([A-Za-z][A-Za-z\s]{1,20}?)(?:\s+(?:to|check|on|with|budget|for\s+\d|\d)|[.,!?]|$)',
+                # "departing atlanta"
+                r'\b(?:departing|leaving)\s+(?:from\s+)?([A-Za-z][A-Za-z\s]{1,20}?)(?:\s+(?:to|on|\d)|[.,]|$)',
             ]
             for pat in origin_patterns:
-                m = re.search(pat, msg, re.IGNORECASE)
+                m = re.search(pat, msg_no_dates, re.IGNORECASE)
                 if m:
-                    origin = m.group(1).strip().title()
-                    if len(origin) > 1 and not re.match(r'^\d', origin):
-                        self.trip.origin = origin
+                    candidate = m.group(1).strip().title()
+                    # Strip trailing filler words
+                    candidate = re.sub(r'\s+(?:For|A|The|And|Or|To|Budget)$', '', candidate, flags=re.IGNORECASE).strip()
+                    if self._is_valid_city(candidate):
+                        self.trip.origin = candidate
                         break
 
-        # ── Dates — extract ALL dates found, assign checkin/checkout in order ──
-        if not self.trip.checkin or not self.trip.checkout:
-            all_dates = re.findall(r'\d{4}-\d{2}-\d{2}', msg)
-            if len(all_dates) >= 2:
-                if not self.trip.checkin: self.trip.checkin = all_dates[0]
-                if not self.trip.checkout: self.trip.checkout = all_dates[1]
-            elif len(all_dates) == 1:
-                if not self.trip.checkin: self.trip.checkin = all_dates[0]
-
-        # ── Nights from message ──
+        # Step 5: Nights → checkout
         if self.trip.checkin and not self.trip.checkout:
-            nights = self._extract_nights(msg)
+            nights = self._extract_nights(msg_no_dates)
             if nights:
                 dt = datetime.strptime(self.trip.checkin, "%Y-%m-%d")
                 self.trip.checkout = (dt + timedelta(days=nights)).strftime("%Y-%m-%d")
 
-        # ── Budget — only with explicit markers ──
+        # Step 6: Budget
         if not self.trip.budget:
-            b = self._extract_budget(msg)
+            b = self._extract_budget(original)
             if b: self.trip.budget = b
 
-        # ── Traveler count ──
+        # Step 7: Traveler count
         if self.trip.traveler_count() == 0:
-            for pat in [r'(\d+)\s*(?:people|persons?|travelers?|adults?)', r'for\s+(\d+)\s+people', r'party\s+of\s+(\d+)']:
-                m = re.search(pat, msg)
+            count_pats = [
+                r'\b(\d+)\s*(?:people|persons?|travelers?|adults?|passengers?)\b',
+                r'\bfor\s+(\d+)\s+(?:people|persons?|travelers?|adults?)\b',
+                r'\bparty\s+of\s+(\d+)\b',
+                r'\b(\d+)\s+of\s+us\b',
+            ]
+            for pat in count_pats:
+                m = re.search(pat, msg_l)
                 if m:
                     n = int(m.group(1))
                     if 1 <= n <= 20:
                         self.trip.travelers = [TravelerProfile() for _ in range(n)]
                         break
+
+    def _extract_city_name(self, text: str) -> str:
+        """Extract a clean city name from a direct reply."""
+        # Remove common filler words
+        text = re.sub(
+            r'\b(i am|i\'m|we are|flying|departing|leaving|it is|its|'
+            r'from|to|going|visiting|the|a|an|city|is|my|our)\b',
+            '', text, flags=re.IGNORECASE
+        )
+        # Remove dates
+        text = re.sub(r'\b\d{4}-\d{2}-\d{2}\b', '', text)
+        text = re.sub(r'\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b', '', text)
+        result = text.strip(" .,!?-").title()
+        return result if self._is_valid_city(result) else ""
 
     def _generate_question(self, field: str) -> str:
         d = self.trip.to_dict()
