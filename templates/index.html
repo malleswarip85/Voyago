@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TravelAI — Your Intelligent Travel Companion</title>
+    <title>Voyago — AI Travel Planner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <!-- Animated background -->
-    <div class="bg-layer">
+    <div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+<div class="cloud cloud-3"></div>
+<div class="plane">✈</div>
+
+<div class="deco-shape deco-1"></div>
+<div class="deco-shape deco-2"></div>
+<div class="deco-shape deco-3"></div>
+<div class="deco-shape deco-4"></div>
+<div class="plane">✈</div>
+<div class="bg-layer">
         <div class="bg-orb orb1"></div>
         <div class="bg-orb orb2"></div>
         <div class="bg-orb orb3"></div>
@@ -30,7 +40,7 @@
             <div class="logo">
                 <div class="logo-icon">✈</div>
                 <div class="logo-text">
-                    <span class="logo-title">TravelAI</span>
+                    <span class="logo-title">Voyago</span>
                     <span class="logo-sub">Multi-Agent Planner</span>
                 </div>
             </div>
@@ -102,8 +112,11 @@
         <!-- Main Chat Area -->
         <main class="chat-main">
             <div class="chat-header">
-                <h1 class="chat-title">Plan Your Dream Trip</h1>
-                <p class="chat-subtitle">Powered by AI agents — flights, hotels, weather & full itinerary</p>
+                <div class="chat-header-left">
+                    <h1 class="chat-title">✈️ Plan Your Dream Trip ✈️</h1>
+                    <p class="chat-subtitle">Powered by 6 AI agents — flights, hotels, weather & full itinerary</p>
+                </div>
+                <div class="header-badge">🤖 Multi-Agent AI</div>
             </div>
 
             <div class="chat-messages" id="chatMessages">
@@ -112,7 +125,7 @@
                     <div class="message-avatar">✈️</div>
                     <div class="message-content">
                         <div class="message-bubble">
-                            <p>✨ <strong>Welcome to TravelAI!</strong> I'm your intelligent travel planning assistant powered by multiple AI agents.</p>
+                            <p>✨ <strong>Welcome to Voyago!</strong> I'm your intelligent travel planning assistant powered by multiple AI agents.</p>
                             <br>
                             <p>I can help you plan a complete trip including:</p>
                             <ul>
