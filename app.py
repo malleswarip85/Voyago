@@ -12,21 +12,39 @@ load_dotenv()
 from agents.orchestrator import AgentOrchestrator
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+
+# SECRET_KEY must be stable across restarts — never use random fallback in production
+secret = os.getenv("SECRET_KEY")
+if not secret:
+    print("WARNING: SECRET_KEY not set! Sessions will break on restart.")
+    secret = "voyago-default-secret-key-change-this"
+app.secret_key = secret
+
+# Session config — needed for Railway (HTTPS)
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("RAILWAY_ENVIRONMENT") is not None
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
 CORS(app)
 
+# In-memory session store
 sessions = {}
-last_plan = {}  # store last plan data for PDF generation
 
-def get_orc(session_id):
+def get_orc(session_id: str) -> AgentOrchestrator:
     if session_id not in sessions:
         sessions[session_id] = AgentOrchestrator()
     return sessions[session_id]
 
-@app.route("/")
-def index():
+def get_session_id() -> str:
+    """Get or create a stable session ID."""
     if "session_id" not in session:
         session["session_id"] = str(uuid.uuid4())
+        session.permanent = True
+    return session["session_id"]
+
+@app.route("/")
+def index():
+    get_session_id()  # ensure session created on page load
     return render_template("index.html")
 
 @app.route("/api/chat", methods=["POST"])
@@ -37,13 +55,9 @@ def chat():
         if not msg:
             return jsonify({"error": "Empty"}), 400
 
-        sid = session.get("session_id", str(uuid.uuid4()))
+        sid = get_session_id()
         orc = get_orc(sid)
         result = orc.process_message(msg)
-
-        # Store plan data for PDF if done
-        if result.get("stage") == "done":
-            last_plan[sid] = orc.last_plan_data if hasattr(orc, 'last_plan_data') else {}
 
         return jsonify({
             "success": True,
@@ -58,7 +72,11 @@ def chat():
         import traceback
         print(f"Chat error: {e}")
         traceback.print_exc()
-        return jsonify({"success": False, "message": f"Error: {str(e)}", "stage": "error"}), 500
+        return jsonify({
+            "success": False,
+            "message": f"Something went wrong: {str(e)}",
+            "stage": "error"
+        }), 500
 
 @app.route("/api/download-pdf")
 def download_pdf():
