@@ -118,6 +118,20 @@ class AgentOrchestrator:
         self.conversation_history.append({"role": "user", "content": user_message})
         msg = user_message.lower().strip()
 
+        # ── Handle upfront trip form submission ──
+        if user_message.startswith("TRIP_FORM:"):
+            return self._handle_trip_form(user_message)
+
+        # ── Handle traveler form JSON ──
+        if "traveler_form:" in user_message.lower():
+            self._parse_traveler_form(user_message)
+            print(f"Trip after traveler form: {json.dumps(self.trip.to_dict(), indent=2)}")
+            incomplete = [t for t in self.trip.travelers if not t.is_complete()]
+            if not incomplete:
+                return self._run_agents()
+            resp = self._traveler_form_prompt()
+            return {"message": resp, "stage": "collecting", "collected": self.trip.to_dict(), "missing": ["traveler_profiles"]}
+
         # ── Handle budget increase confirmation ──
         if self.awaiting_budget_confirm:
             if any(w in msg for w in ["yes", "ok", "okay", "sure", "agree", "fine", "accept", "yeah", "yep"]):
@@ -184,6 +198,50 @@ class AgentOrchestrator:
 
         # ── Run all agents ──
         return self._run_agents()
+
+    def _handle_trip_form(self, user_message: str) -> dict:
+        """Handle the upfront trip planning form submission."""
+        try:
+            data = json.loads(user_message[len("TRIP_FORM:"):].strip())
+            self.trip.origin           = data.get("origin", "").strip().title()
+            self.trip.destination      = data.get("destination", "").strip().title()
+            self.trip.checkin          = data.get("checkin", "")
+            self.trip.checkout         = data.get("checkout", "")
+            self.trip.budget           = float(data.get("budget", 0))
+            self.trip.nonstop_preferred = bool(data.get("nonstop_preferred", False))
+            self.trip.nights           = int(data.get("nights", 1))
+            n_travelers                = int(data.get("travelers", 1))
+            self.trip.travelers        = [TravelerProfile() for _ in range(n_travelers)]
+            self.budget_warning_sent   = True  # Skip budget warning (already validated in form)
+            print(f"Trip form loaded: {json.dumps(self.trip.to_dict(), indent=2)}")
+        except Exception as e:
+            print(f"Trip form parse error: {e}")
+            return {
+                "message": "❌ Could not read form data. Please try again.",
+                "stage": "error", "collected": {}, "missing": []
+            }
+
+        # Validate budget vs duration
+        budget_check = self._validate_budget()
+        if budget_check:
+            self.awaiting_budget_confirm = True
+            self.suggested_budget = budget_check["suggested"]
+            self.budget_warning_sent = False
+            return {
+                "message": budget_check["message"],
+                "stage": "collecting",
+                "collected": self.trip.to_dict(),
+                "missing": []
+            }
+
+        # All good — ask for traveler profiles
+        resp = self._traveler_form_prompt()
+        return {
+            "message": resp,
+            "stage": "collecting",
+            "collected": self.trip.to_dict(),
+            "missing": ["traveler_profiles"]
+        }
 
     def _validate_budget(self) -> dict | None:
         """Check if budget is sufficient for the trip duration."""
