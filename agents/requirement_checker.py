@@ -36,18 +36,18 @@ class RequirementCheckerAgent:
                 return self._error("Please provide a valid number of travelers.")
 
         # Check destination
-        destination = user_data.get("destination", "").strip()
+        destination = str(user_data.get("destination") or "").strip()
         if not destination:
             missing.append("destination city")
         else:
             normalized["destination"] = destination
 
         # Check origin
-        origin = user_data.get("origin", "").strip()
+        origin = str(user_data.get("origin") or "").strip()
         normalized["origin"] = origin if origin else "Not specified"
 
         # Check check-in date
-        checkin = user_data.get("checkin", "").strip()
+        checkin = str(user_data.get("checkin") or "").strip()
         if not checkin:
             missing.append("check-in date")
         else:
@@ -57,7 +57,7 @@ class RequirementCheckerAgent:
             normalized["checkin"] = parsed
 
         # Check check-out date
-        checkout = user_data.get("checkout", "").strip()
+        checkout = str(user_data.get("checkout") or "").strip()
         if not checkout:
             missing.append("check-out date")
         else:

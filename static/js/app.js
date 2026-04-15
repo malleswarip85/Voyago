@@ -93,11 +93,11 @@ function buildTripForm() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
             <div>
                 <label style="font-size:10.5px;font-weight:700;color:#1e40af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">🛫 From (City or Country)</label>
-                <input type="text" id="tf-origin" placeholder="e.g. Atlanta, USA"
+                <input type="text" id="tf-origin" placeholder="e.g. Atlanta, Chicago, USA"
                     style="width:100%;padding:9px 12px;border:1.5px solid rgba(59,130,246,0.18);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;background:#eff6ff;color:#1e3058;outline:none;transition:all 0.2s;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.background='white'"
                     onblur="this.style.borderColor='rgba(59,130,246,0.18)';this.style.background='#eff6ff';setTimeout(()=>showAirportDropdown('origin'),200)"
-                    oninput="clearAirportDropdown('origin')">
+                    oninput="clearAirportDropdown('origin');setTimeout(()=>showAirportDropdown('origin'),400)">
                 <span class="tf-error" id="err-origin"></span>
                 <!-- Origin airport dropdown -->
                 <div id="origin-airport-wrap" style="display:none;margin-top:8px;">
@@ -109,11 +109,11 @@ function buildTripForm() {
             </div>
             <div>
                 <label style="font-size:10.5px;font-weight:700;color:#1e40af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">📍 To (City or Country)</label>
-                <input type="text" id="tf-destination" placeholder="e.g. India, Paris"
+                <input type="text" id="tf-destination" placeholder="e.g. India, Paris, Japan"
                     style="width:100%;padding:9px 12px;border:1.5px solid rgba(59,130,246,0.18);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;background:#eff6ff;color:#1e3058;outline:none;transition:all 0.2s;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.background='white'"
                     onblur="this.style.borderColor='rgba(59,130,246,0.18)';this.style.background='#eff6ff';setTimeout(()=>showAirportDropdown('destination'),200)"
-                    oninput="clearAirportDropdown('destination')">
+                    oninput="clearAirportDropdown('destination');setTimeout(()=>showAirportDropdown('destination'),400)">
                 <span class="tf-error" id="err-destination"></span>
                 <!-- Destination airport dropdown -->
                 <div id="destination-airport-wrap" style="display:none;margin-top:8px;">
@@ -660,8 +660,14 @@ function insertMessage(el) {
 
 function markdownToHtml(text) {
     if (!text) return '';
+    // Save HTML tags before escaping
+    const htmlTags = [];
+    text = text.replace(/<a [^>]+>.*?<\/a>/g, match => {
+        htmlTags.push(match);
+        return `__HTML_TAG_${htmlTags.length - 1}__`;
+    });
     let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return s
+    s = s
         .replace(/^### (.+)$/gm,'<h3>$1</h3>')
         .replace(/^## (.+)$/gm,'<h2>$1</h2>')
         .replace(/^# (.+)$/gm,'<h2>$1</h2>')
@@ -673,6 +679,11 @@ function markdownToHtml(text) {
         .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
         .replace(/\n\n/g,'<br><br>')
         .replace(/\n/g,'<br>');
+    // Restore HTML tags
+    htmlTags.forEach((tag, i) => {
+        s = s.replace(`__HTML_TAG_${i}__`, tag);
+    });
+    return s;
 }
 
 function setLoading(state) {

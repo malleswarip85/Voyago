@@ -13,8 +13,79 @@ const AIRPORT_DATA = {
         { code: "AMD", name: "Sardar Vallabhbhai Patel Intl", city: "Ahmedabad" },
         { code: "GOI", name: "Goa Intl (Dabolim)", city: "Goa" },
     ],
-    // USA
-    "united states": [
+    // USA — individual cities
+    "atlanta": [
+        { code: "ATL", name: "Hartsfield-Jackson Atlanta Intl", city: "Atlanta" },
+    ],
+    "mobile": [
+        { code: "MOB", name: "Mobile Regional Airport", city: "Mobile" },
+    ],
+    "new york": [
+        { code: "JFK", name: "John F. Kennedy Intl", city: "New York" },
+        { code: "LGA", name: "LaGuardia Airport", city: "New York" },
+        { code: "EWR", name: "Newark Liberty Intl", city: "New York/Newark" },
+    ],
+    "chicago": [
+        { code: "ORD", name: "O'Hare Intl", city: "Chicago" },
+        { code: "MDW", name: "Midway Intl", city: "Chicago" },
+    ],
+    "los angeles": [
+        { code: "LAX", name: "Los Angeles Intl", city: "Los Angeles" },
+        { code: "BUR", name: "Hollywood Burbank Airport", city: "Burbank" },
+    ],
+    "miami": [
+        { code: "MIA", name: "Miami Intl", city: "Miami" },
+        { code: "FLL", name: "Fort Lauderdale-Hollywood Intl", city: "Fort Lauderdale" },
+    ],
+    "dallas": [
+        { code: "DFW", name: "Dallas/Fort Worth Intl", city: "Dallas" },
+        { code: "DAL", name: "Dallas Love Field", city: "Dallas" },
+    ],
+    "houston": [
+        { code: "IAH", name: "George Bush Intercontinental", city: "Houston" },
+        { code: "HOU", name: "William P. Hobby Airport", city: "Houston" },
+    ],
+    "san francisco": [
+        { code: "SFO", name: "San Francisco Intl", city: "San Francisco" },
+        { code: "OAK", name: "Oakland Intl", city: "Oakland" },
+    ],
+    "seattle": [
+        { code: "SEA", name: "Seattle-Tacoma Intl", city: "Seattle" },
+    ],
+    "boston": [
+        { code: "BOS", name: "Logan Intl", city: "Boston" },
+    ],
+    "las vegas": [
+        { code: "LAS", name: "Harry Reid Intl", city: "Las Vegas" },
+    ],
+    "orlando": [
+        { code: "MCO", name: "Orlando Intl", city: "Orlando" },
+    ],
+    "denver": [
+        { code: "DEN", name: "Denver Intl", city: "Denver" },
+    ],
+    "phoenix": [
+        { code: "PHX", name: "Phoenix Sky Harbor Intl", city: "Phoenix" },
+    ],
+    "washington": [
+        { code: "IAD", name: "Dulles Intl", city: "Washington DC" },
+        { code: "DCA", name: "Ronald Reagan Washington National", city: "Washington DC" },
+    ],
+    "minneapolis": [
+        { code: "MSP", name: "Minneapolis-Saint Paul Intl", city: "Minneapolis" },
+    ],
+    "detroit": [
+        { code: "DTW", name: "Detroit Metropolitan Wayne County", city: "Detroit" },
+    ],
+    "charlotte": [
+        { code: "CLT", name: "Charlotte Douglas Intl", city: "Charlotte" },
+    ],
+    "portland": [
+        { code: "PDX", name: "Portland Intl", city: "Portland" },
+    ],
+    "nashville": [
+        { code: "BNA", name: "Nashville Intl", city: "Nashville" },
+    ],
         { code: "JFK", name: "John F. Kennedy Intl", city: "New York" },
         { code: "LAX", name: "Los Angeles Intl", city: "Los Angeles" },
         { code: "ORD", name: "O'Hare Intl", city: "Chicago" },
