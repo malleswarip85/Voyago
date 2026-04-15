@@ -1,5 +1,10 @@
 // Voyago — Frontend v6 — Single upfront form
 
+// Safe fallback if airport_data.js fails to load
+if (typeof getAirportsForDestination === 'undefined') {
+    window.getAirportsForDestination = function(dest) { return []; };
+}
+
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
@@ -189,32 +194,34 @@ function buildTripForm() {
 }
 
 function showAirportDropdown(type) {
-    const input = document.getElementById(`tf-${type}`);
-    const wrap = document.getElementById(`${type}-airport-wrap`);
-    const select = document.getElementById(`tf-${type}-airport`);
-    if (!input || !wrap || !select) return;
+    try {
+        const input = document.getElementById(`tf-${type}`);
+        const wrap = document.getElementById(`${type}-airport-wrap`);
+        const select = document.getElementById(`tf-${type}-airport`);
+        if (!input || !wrap || !select) return;
 
-    const val = input.value.trim();
-    if (!val || val.length < 2) { wrap.style.display = 'none'; return; }
+        const val = input.value.trim();
+        if (!val || val.length < 2) { wrap.style.display = 'none'; return; }
 
-    const airports = getAirportsForDestination(val);
-    if (!airports || airports.length === 0) { wrap.style.display = 'none'; return; }
+        const airports = (typeof getAirportsForDestination === 'function')
+            ? getAirportsForDestination(val) : [];
+        if (!airports || airports.length === 0) { wrap.style.display = 'none'; return; }
 
-    // Populate dropdown
-    select.innerHTML = airports.map(a =>
-        `<option value="${a.code}">${a.code} — ${a.city} (${a.name})</option>`
-    ).join('');
+        select.innerHTML = airports.map(a =>
+            `<option value="${a.code}">${a.code} — ${a.city} (${a.name})</option>`
+        ).join('');
 
-    wrap.style.display = 'block';
-
-    // Animate in
-    wrap.style.opacity = '0';
-    wrap.style.transform = 'translateY(-5px)';
-    setTimeout(() => {
-        wrap.style.transition = 'all 0.2s ease';
-        wrap.style.opacity = '1';
-        wrap.style.transform = 'translateY(0)';
-    }, 10);
+        wrap.style.display = 'block';
+        wrap.style.opacity = '0';
+        wrap.style.transform = 'translateY(-5px)';
+        setTimeout(() => {
+            wrap.style.transition = 'all 0.2s ease';
+            wrap.style.opacity = '1';
+            wrap.style.transform = 'translateY(0)';
+        }, 10);
+    } catch(e) {
+        console.warn('Airport dropdown error:', e);
+    }
 }
 
 function clearAirportDropdown(type) {
@@ -223,6 +230,7 @@ function clearAirportDropdown(type) {
 }
 
 
+function clearTfErrors() {
     document.querySelectorAll('.tf-error').forEach(e => e.textContent = '');
     document.querySelectorAll('#trip-form-body input, #trip-form-body select').forEach(el => {
         el.style.borderColor = 'rgba(59,130,246,0.18)';
