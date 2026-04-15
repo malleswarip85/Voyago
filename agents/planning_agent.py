@@ -55,8 +55,9 @@ class PlanningAgent:
         best_hotel = "Not available"
         hotel_per_night = 0
         hotel_rooms = hotel_data.get("rooms", 1)
+        hotel_search_city = hotel_data.get("search_city", dest)
+        hotel_airport = hotel_data.get("airport_code", "")
         if hotel_data.get("hotels"):
-            # Use same recommendation logic as hotel agent
             from agents.hotel_agent import HotelAgent
             _ha = HotelAgent()
             best_idx = _ha.recommend(hotel_data["hotels"], nights, budget)
@@ -64,9 +65,12 @@ class PlanningAgent:
             hotel_per_night = h.get("price_per_night_per_room") or h.get("price_per_night", 0)
             hotel_per_night_total = hotel_per_night * hotel_rooms
             hotel_cost = hotel_per_night_total * nights
+            location_str = h.get("location", hotel_search_city)
+            airport_str = f" | Near {hotel_airport} Airport" if hotel_airport else ""
             best_hotel = (
                 f"{h['name']} — ${hotel_per_night_total:,.2f}/night "
                 f"({hotel_rooms} room(s)) | Rating: {h['rating']}/10 | "
+                f"Location: {location_str}{airport_str} | "
                 f"Total: ${hotel_cost:,.2f}"
             )
 
@@ -110,6 +114,8 @@ RECOMMENDED FLIGHT (real data):
 
 RECOMMENDED HOTEL (real data):
 {best_hotel}
+Hotel search area: {hotel_search_city}{f" (near {hotel_airport} airport)" if hotel_airport else ""}
+NOTE: Suggest activities, restaurants and attractions near this hotel location.
 
 WEATHER (real data):
 Current: {weather_str}

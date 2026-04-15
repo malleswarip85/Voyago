@@ -1,0 +1,212 @@
+// Airport data by country/city for dropdown selection
+const AIRPORT_DATA = {
+    // India
+    "india": [
+        { code: "DEL", name: "Indira Gandhi Intl", city: "New Delhi" },
+        { code: "BOM", name: "Chhatrapati Shivaji Intl", city: "Mumbai" },
+        { code: "BLR", name: "Kempegowda Intl", city: "Bangalore" },
+        { code: "HYD", name: "Rajiv Gandhi Intl", city: "Hyderabad" },
+        { code: "MAA", name: "Chennai Intl", city: "Chennai" },
+        { code: "CCU", name: "Netaji Subhash Intl", city: "Kolkata" },
+        { code: "COK", name: "Cochin Intl", city: "Kochi" },
+        { code: "PNQ", name: "Pune Intl", city: "Pune" },
+        { code: "AMD", name: "Sardar Vallabhbhai Patel Intl", city: "Ahmedabad" },
+        { code: "GOI", name: "Goa Intl (Dabolim)", city: "Goa" },
+    ],
+    // USA
+    "united states": [
+        { code: "JFK", name: "John F. Kennedy Intl", city: "New York" },
+        { code: "LAX", name: "Los Angeles Intl", city: "Los Angeles" },
+        { code: "ORD", name: "O'Hare Intl", city: "Chicago" },
+        { code: "ATL", name: "Hartsfield-Jackson Intl", city: "Atlanta" },
+        { code: "DFW", name: "Dallas/Fort Worth Intl", city: "Dallas" },
+        { code: "MIA", name: "Miami Intl", city: "Miami" },
+        { code: "SFO", name: "San Francisco Intl", city: "San Francisco" },
+        { code: "SEA", name: "Seattle-Tacoma Intl", city: "Seattle" },
+        { code: "BOS", name: "Logan Intl", city: "Boston" },
+        { code: "LAS", name: "Harry Reid Intl", city: "Las Vegas" },
+    ],
+    // UK
+    "united kingdom": [
+        { code: "LHR", name: "Heathrow", city: "London" },
+        { code: "LGW", name: "Gatwick", city: "London" },
+        { code: "STN", name: "Stansted", city: "London" },
+        { code: "MAN", name: "Manchester Intl", city: "Manchester" },
+        { code: "EDI", name: "Edinburgh Airport", city: "Edinburgh" },
+    ],
+    "london": [
+        { code: "LHR", name: "Heathrow", city: "London" },
+        { code: "LGW", name: "Gatwick", city: "London" },
+        { code: "STN", name: "Stansted", city: "London" },
+        { code: "LCY", name: "London City", city: "London" },
+    ],
+    // Australia
+    "australia": [
+        { code: "SYD", name: "Sydney Kingsford Smith", city: "Sydney" },
+        { code: "MEL", name: "Melbourne Intl", city: "Melbourne" },
+        { code: "BNE", name: "Brisbane Airport", city: "Brisbane" },
+        { code: "PER", name: "Perth Airport", city: "Perth" },
+        { code: "ADL", name: "Adelaide Airport", city: "Adelaide" },
+    ],
+    // Canada
+    "canada": [
+        { code: "YYZ", name: "Toronto Pearson Intl", city: "Toronto" },
+        { code: "YVR", name: "Vancouver Intl", city: "Vancouver" },
+        { code: "YUL", name: "Montreal-Trudeau Intl", city: "Montreal" },
+        { code: "YYC", name: "Calgary Intl", city: "Calgary" },
+    ],
+    // Japan
+    "japan": [
+        { code: "NRT", name: "Narita Intl", city: "Tokyo" },
+        { code: "HND", name: "Haneda Airport", city: "Tokyo" },
+        { code: "KIX", name: "Kansai Intl", city: "Osaka" },
+        { code: "NGO", name: "Chubu Centrair Intl", city: "Nagoya" },
+        { code: "CTS", name: "New Chitose Airport", city: "Sapporo" },
+    ],
+    // Germany
+    "germany": [
+        { code: "FRA", name: "Frankfurt Intl", city: "Frankfurt" },
+        { code: "MUC", name: "Munich Airport", city: "Munich" },
+        { code: "BER", name: "Berlin Brandenburg Intl", city: "Berlin" },
+        { code: "DUS", name: "Düsseldorf Intl", city: "Düsseldorf" },
+    ],
+    // France
+    "france": [
+        { code: "CDG", name: "Charles de Gaulle", city: "Paris" },
+        { code: "ORY", name: "Orly Airport", city: "Paris" },
+        { code: "NCE", name: "Nice Côte d'Azur", city: "Nice" },
+        { code: "LYS", name: "Lyon-Saint Exupéry", city: "Lyon" },
+    ],
+    // UAE
+    "uae": [
+        { code: "DXB", name: "Dubai Intl", city: "Dubai" },
+        { code: "AUH", name: "Zayed Intl", city: "Abu Dhabi" },
+        { code: "SHJ", name: "Sharjah Intl", city: "Sharjah" },
+    ],
+    "dubai": [
+        { code: "DXB", name: "Dubai Intl (Terminal 1/2/3)", city: "Dubai" },
+        { code: "DWC", name: "Al Maktoum Intl", city: "Dubai South" },
+    ],
+    // China
+    "china": [
+        { code: "PEK", name: "Beijing Capital Intl", city: "Beijing" },
+        { code: "PKX", name: "Beijing Daxing Intl", city: "Beijing" },
+        { code: "PVG", name: "Shanghai Pudong Intl", city: "Shanghai" },
+        { code: "SHA", name: "Shanghai Hongqiao Intl", city: "Shanghai" },
+        { code: "CAN", name: "Guangzhou Baiyun Intl", city: "Guangzhou" },
+        { code: "CTU", name: "Chengdu Tianfu Intl", city: "Chengdu" },
+    ],
+    // Italy
+    "italy": [
+        { code: "FCO", name: "Fiumicino (Leonardo da Vinci)", city: "Rome" },
+        { code: "MXP", name: "Milano Malpensa", city: "Milan" },
+        { code: "VCE", name: "Venice Marco Polo", city: "Venice" },
+        { code: "NAP", name: "Naples Intl", city: "Naples" },
+        { code: "FLR", name: "Florence Peretola", city: "Florence" },
+    ],
+    // Spain
+    "spain": [
+        { code: "MAD", name: "Adolfo Suárez Madrid-Barajas", city: "Madrid" },
+        { code: "BCN", name: "Barcelona-El Prat", city: "Barcelona" },
+        { code: "AGP", name: "Málaga-Costa del Sol", city: "Málaga" },
+        { code: "PMI", name: "Palma de Mallorca", city: "Mallorca" },
+    ],
+    // Thailand
+    "thailand": [
+        { code: "BKK", name: "Suvarnabhumi Intl", city: "Bangkok" },
+        { code: "DMK", name: "Don Mueang Intl", city: "Bangkok" },
+        { code: "HKT", name: "Phuket Intl", city: "Phuket" },
+        { code: "CNX", name: "Chiang Mai Intl", city: "Chiang Mai" },
+    ],
+    // Singapore
+    "singapore": [
+        { code: "SIN", name: "Changi Airport (T1/T2/T3/T4)", city: "Singapore" },
+    ],
+    // Indonesia/Bali
+    "indonesia": [
+        { code: "CGK", name: "Soekarno-Hatta Intl", city: "Jakarta" },
+        { code: "DPS", name: "I Gusti Ngurah Rai Intl", city: "Bali/Denpasar" },
+        { code: "SUB", name: "Juanda Intl", city: "Surabaya" },
+    ],
+    "bali": [
+        { code: "DPS", name: "I Gusti Ngurah Rai Intl", city: "Denpasar, Bali" },
+    ],
+    // South Korea
+    "south korea": [
+        { code: "ICN", name: "Incheon Intl", city: "Seoul" },
+        { code: "GMP", name: "Gimpo Intl", city: "Seoul" },
+        { code: "PUS", name: "Gimhae Intl", city: "Busan" },
+    ],
+    // Malaysia
+    "malaysia": [
+        { code: "KUL", name: "Kuala Lumpur Intl (KLIA)", city: "Kuala Lumpur" },
+        { code: "KUL2", name: "klia2 (AirAsia hub)", city: "Kuala Lumpur" },
+        { code: "PEN", name: "Penang Intl", city: "Penang" },
+    ],
+    // Mexico
+    "mexico": [
+        { code: "MEX", name: "Benito Juárez Intl", city: "Mexico City" },
+        { code: "CUN", name: "Cancún Intl", city: "Cancún" },
+        { code: "GDL", name: "Miguel Hidalgo Intl", city: "Guadalajara" },
+    ],
+    // Brazil
+    "brazil": [
+        { code: "GRU", name: "São Paulo-Guarulhos Intl", city: "São Paulo" },
+        { code: "GIG", name: "Rio de Janeiro-Galeão Intl", city: "Rio de Janeiro" },
+        { code: "BSB", name: "Brasília Intl", city: "Brasília" },
+    ],
+    // South Africa
+    "south africa": [
+        { code: "JNB", name: "O.R. Tambo Intl", city: "Johannesburg" },
+        { code: "CPT", name: "Cape Town Intl", city: "Cape Town" },
+        { code: "DUR", name: "King Shaka Intl", city: "Durban" },
+    ],
+    // Egypt
+    "egypt": [
+        { code: "CAI", name: "Cairo Intl", city: "Cairo" },
+        { code: "HRG", name: "Hurghada Intl", city: "Hurghada" },
+        { code: "SSH", name: "Sharm el-Sheikh Intl", city: "Sharm el-Sheikh" },
+    ],
+    // Turkey
+    "turkey": [
+        { code: "IST", name: "Istanbul Airport", city: "Istanbul" },
+        { code: "SAW", name: "Sabiha Gökçen Intl", city: "Istanbul" },
+        { code: "AYT", name: "Antalya Airport", city: "Antalya" },
+    ],
+    // Greece
+    "greece": [
+        { code: "ATH", name: "Athens Intl (Eleftherios Venizelos)", city: "Athens" },
+        { code: "SKG", name: "Thessaloniki Intl", city: "Thessaloniki" },
+        { code: "HER", name: "Heraklion Intl", city: "Crete" },
+        { code: "JTR", name: "Santorini Airport", city: "Santorini" },
+        { code: "CFU", name: "Corfu Intl", city: "Corfu" },
+    ],
+    // Portugal
+    "portugal": [
+        { code: "LIS", name: "Humberto Delgado Airport", city: "Lisbon" },
+        { code: "OPO", name: "Francisco Sá Carneiro Airport", city: "Porto" },
+        { code: "FAO", name: "Faro Airport", city: "Algarve" },
+    ],
+    // Netherlands
+    "netherlands": [
+        { code: "AMS", name: "Amsterdam Schiphol", city: "Amsterdam" },
+        { code: "RTM", name: "Rotterdam The Hague Airport", city: "Rotterdam" },
+    ],
+};
+
+// Get airports for a destination
+function getAirportsForDestination(destination) {
+    if (!destination) return [];
+    const dest = destination.toLowerCase().trim();
+
+    // Direct match
+    if (AIRPORT_DATA[dest]) return AIRPORT_DATA[dest];
+
+    // Partial match — check if destination contains a key
+    for (const [key, airports] of Object.entries(AIRPORT_DATA)) {
+        if (dest.includes(key) || key.includes(dest)) {
+            return airports;
+        }
+    }
+    return [];
+}

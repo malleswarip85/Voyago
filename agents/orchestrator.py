@@ -48,6 +48,8 @@ class TripRequirements:
         self.budget = None
         self.nonstop_preferred = None
         self.travelers = []
+        self.origin_iata = None       # user-selected airport code
+        self.destination_iata = None  # user-selected airport code
 
     def traveler_count(self):
         return len(self.travelers)
@@ -212,7 +214,17 @@ class AgentOrchestrator:
             self.trip.nights           = int(data.get("nights", 1))
             n_travelers                = int(data.get("travelers", 1))
             self.trip.travelers        = [TravelerProfile() for _ in range(n_travelers)]
-            self.budget_warning_sent   = True  # Skip budget warning (already validated in form)
+            self.budget_warning_sent   = True
+
+            # Store selected IATA codes if user chose specific airports
+            self.trip.origin_iata      = data.get("origin_iata") or None
+            self.trip.destination_iata = data.get("destination_iata") or None
+
+            if self.trip.origin_iata:
+                print(f"User selected origin airport: {self.trip.origin_iata}")
+            if self.trip.destination_iata:
+                print(f"User selected destination airport: {self.trip.destination_iata}")
+
             print(f"Trip form loaded: {json.dumps(self.trip.to_dict(), indent=2)}")
         except Exception as e:
             print(f"Trip form parse error: {e}")
@@ -598,9 +610,18 @@ TRAVELER_FORM:{form_json}"""
         dest_log = validated.get('destination', '?')
         print(f"Running agents: {dest_log} | nights={validated.get('nights')} | travelers={validated.get('travelers')}")
 
+        # Use user-selected IATA codes if available
+        origin_query = self.trip.origin_iata or validated.get("origin", "New York")
+        dest_query = self.trip.destination_iata or validated["destination"]
+
+        if self.trip.origin_iata:
+            print(f"Using user-selected origin airport: {self.trip.origin_iata}")
+        if self.trip.destination_iata:
+            print(f"Using user-selected destination airport: {self.trip.destination_iata}")
+
         flight_data = self.flight_agent.search_flights(
-            validated.get("origin", "New York"),
-            validated["destination"],
+            origin_query,
+            dest_query,
             validated["checkin"],
             validated["travelers"],
             nonstop=nonstop
@@ -610,7 +631,8 @@ TRAVELER_FORM:{form_json}"""
             validated["checkin"],
             validated["checkout"],
             validated["travelers"],
-            validated["budget"]
+            validated["budget"],
+            destination_iata=self.trip.destination_iata
         )
         weather_data = self.climate_agent.get_weather(
             validated["destination"],

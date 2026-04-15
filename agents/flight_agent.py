@@ -61,31 +61,30 @@ IATA_CODES = {
     "lima": "LIM", "santiago": "SCL", "moscow": "SVO",
 }
 
-# Route-aware minimum validation
-# These are conservative minimums to filter clearly wrong results
-MIN_INTL_DURATION = 90    # baseline min (90 min)
+# Route-aware minimum price validation only
+# Duration check removed — Duffel returns segment durations not total
 MIN_INTL_PRICE_PP = 80    # baseline min price/person
 
-# Long-haul destination keywords → minimum duration + price
+# Long-haul destination keywords → minimum price per person only
 LONG_HAUL_RULES = [
-    # (destination keywords, min_duration_mins, min_price_per_person)
+    # (destination keywords, min_price_per_person)
     (["india","delhi","mumbai","bangalore","chennai","hyderabad","kolkata",
-      "ahmedabad","pune","jaipur"], 900, 500),
+      "ahmedabad","pune","jaipur"], 400),
     (["singapore","bangkok","kuala lumpur","jakarta","manila",
-      "ho chi minh","hanoi","yangon"], 840, 450),
+      "ho chi minh","hanoi","yangon"], 350),
     (["tokyo","osaka","seoul","beijing","shanghai","hong kong",
-      "taipei","guangzhou"], 780, 600),
-    (["sydney","melbourne","auckland","brisbane","perth"], 1000, 700),
+      "taipei","guangzhou"], 450),
+    (["sydney","melbourne","auckland","brisbane","perth"], 600),
     (["london","paris","amsterdam","frankfurt","rome","madrid",
       "barcelona","berlin","vienna","zurich","lisbon","athens",
-      "brussels","stockholm","oslo","copenhagen"], 480, 350),
-    (["dubai","abu dhabi","doha","riyadh","jeddah","kuwait"], 780, 450),
+      "brussels","stockholm","oslo","copenhagen"], 250),
+    (["dubai","abu dhabi","doha","riyadh","jeddah","kuwait"], 350),
     (["cairo","nairobi","johannesburg","cape town","lagos",
-      "accra","addis ababa","casablanca"], 840, 500),
-    (["moscow","istanbul"], 600, 350),
-    (["toronto","montreal","vancouver"], 150, 150),
+      "accra","addis ababa","casablanca"], 400),
+    (["moscow","istanbul"], 250),
+    (["toronto","montreal","vancouver"], 120),
     (["cancun","mexico city","bogota","lima","santiago",
-      "buenos aires","sao paulo"], 240, 200),
+      "buenos aires","sao paulo"], 150),
 ]
 
 
@@ -285,12 +284,9 @@ class FlightAgent:
                 )
                 flight_num = f"{airline_iata}{first_seg.get('marketing_carrier_flight_number', '000')}"
 
-                # ── Route-aware sanity checks ──
-                min_dur, min_price = self._get_route_minimums(destination)
+                # ── Price validation only (duration unreliable for connecting flights) ──
+                min_price = self._get_route_minimums(destination)
 
-                if duration_mins < min_dur:
-                    print(f"Rejected {airline_name}: {duration_mins}min < min {min_dur}min for {destination}")
-                    continue
                 if price_per_person < min_price:
                     print(f"Rejected {airline_name}: ${price_per_person}/person < min ${min_price} for {destination}")
                     continue
@@ -325,12 +321,12 @@ class FlightAgent:
         return flights
 
     def _get_route_minimums(self, destination: str):
-        """Return (min_duration_minutes, min_price_per_person) for a destination."""
+        """Return min_price_per_person for a destination."""
         dest_lower = destination.lower()
-        for keywords, min_dur, min_price in LONG_HAUL_RULES:
+        for keywords, min_price in LONG_HAUL_RULES:
             if any(k in dest_lower for k in keywords):
-                return min_dur, min_price
-        return MIN_INTL_DURATION, MIN_INTL_PRICE_PP
+                return min_price
+        return MIN_INTL_PRICE_PP
 
     def _parse_duration(self, iso_dur, dep, arr):
         if iso_dur:

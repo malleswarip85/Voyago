@@ -87,20 +87,36 @@ function buildTripForm() {
         <!-- Row 1: Origin & Destination -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
             <div>
-                <label style="font-size:10.5px;font-weight:700;color:#1e40af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">🛫 From (Origin City)</label>
-                <input type="text" id="tf-origin" placeholder="e.g. Atlanta, Chicago"
+                <label style="font-size:10.5px;font-weight:700;color:#1e40af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">🛫 From (City or Country)</label>
+                <input type="text" id="tf-origin" placeholder="e.g. Atlanta, USA"
                     style="width:100%;padding:9px 12px;border:1.5px solid rgba(59,130,246,0.18);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;background:#eff6ff;color:#1e3058;outline:none;transition:all 0.2s;"
-                    onfocus="this.style.borderColor='#00b894';this.style.background='white'"
-                    onblur="this.style.borderColor='rgba(59,130,246,0.18)';this.style.background='#eff6ff'">
+                    onfocus="this.style.borderColor='#3b82f6';this.style.background='white'"
+                    onblur="this.style.borderColor='rgba(59,130,246,0.18)';this.style.background='#eff6ff';setTimeout(()=>showAirportDropdown('origin'),200)"
+                    oninput="clearAirportDropdown('origin')">
                 <span class="tf-error" id="err-origin"></span>
+                <!-- Origin airport dropdown -->
+                <div id="origin-airport-wrap" style="display:none;margin-top:8px;">
+                    <label style="font-size:10px;font-weight:700;color:#3b82f6;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">🛫 Select Departure Airport</label>
+                    <select id="tf-origin-airport"
+                        style="width:100%;padding:9px 12px;border:1.5px solid rgba(59,130,246,0.25);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12.5px;background:#e8f0fe;color:#1e3058;outline:none;">
+                    </select>
+                </div>
             </div>
             <div>
-                <label style="font-size:10.5px;font-weight:700;color:#1e40af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">📍 To (Destination)</label>
-                <input type="text" id="tf-destination" placeholder="e.g. Paris, Singapore"
+                <label style="font-size:10.5px;font-weight:700;color:#1e40af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">📍 To (City or Country)</label>
+                <input type="text" id="tf-destination" placeholder="e.g. India, Paris"
                     style="width:100%;padding:9px 12px;border:1.5px solid rgba(59,130,246,0.18);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;background:#eff6ff;color:#1e3058;outline:none;transition:all 0.2s;"
-                    onfocus="this.style.borderColor='#00b894';this.style.background='white'"
-                    onblur="this.style.borderColor='rgba(59,130,246,0.18)';this.style.background='#eff6ff'">
+                    onfocus="this.style.borderColor='#3b82f6';this.style.background='white'"
+                    onblur="this.style.borderColor='rgba(59,130,246,0.18)';this.style.background='#eff6ff';setTimeout(()=>showAirportDropdown('destination'),200)"
+                    oninput="clearAirportDropdown('destination')">
                 <span class="tf-error" id="err-destination"></span>
+                <!-- Destination airport dropdown -->
+                <div id="destination-airport-wrap" style="display:none;margin-top:8px;">
+                    <label style="font-size:10px;font-weight:700;color:#3b82f6;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">🛬 Select Arrival Airport</label>
+                    <select id="tf-destination-airport"
+                        style="width:100%;padding:9px 12px;border:1.5px solid rgba(59,130,246,0.25);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12.5px;background:#e8f0fe;color:#1e3058;outline:none;">
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -172,7 +188,41 @@ function buildTripForm() {
     `;
 }
 
-function clearTfErrors() {
+function showAirportDropdown(type) {
+    const input = document.getElementById(`tf-${type}`);
+    const wrap = document.getElementById(`${type}-airport-wrap`);
+    const select = document.getElementById(`tf-${type}-airport`);
+    if (!input || !wrap || !select) return;
+
+    const val = input.value.trim();
+    if (!val || val.length < 2) { wrap.style.display = 'none'; return; }
+
+    const airports = getAirportsForDestination(val);
+    if (!airports || airports.length === 0) { wrap.style.display = 'none'; return; }
+
+    // Populate dropdown
+    select.innerHTML = airports.map(a =>
+        `<option value="${a.code}">${a.code} — ${a.city} (${a.name})</option>`
+    ).join('');
+
+    wrap.style.display = 'block';
+
+    // Animate in
+    wrap.style.opacity = '0';
+    wrap.style.transform = 'translateY(-5px)';
+    setTimeout(() => {
+        wrap.style.transition = 'all 0.2s ease';
+        wrap.style.opacity = '1';
+        wrap.style.transform = 'translateY(0)';
+    }, 10);
+}
+
+function clearAirportDropdown(type) {
+    const wrap = document.getElementById(`${type}-airport-wrap`);
+    if (wrap) wrap.style.display = 'none';
+}
+
+
     document.querySelectorAll('.tf-error').forEach(e => e.textContent = '');
     document.querySelectorAll('#trip-form-body input, #trip-form-body select').forEach(el => {
         el.style.borderColor = 'rgba(59,130,246,0.18)';
@@ -233,10 +283,20 @@ function submitTripForm() {
     btn.style.opacity = '0.7';
     document.querySelectorAll('#trip-form-body input, #trip-form-body select').forEach(el => el.disabled = true);
 
+    // Get selected airports (if available)
+    const originAirport = document.getElementById('tf-origin-airport')?.value || '';
+    const destAirport = document.getElementById('tf-destination-airport')?.value || '';
+
+    const originDisplay = originAirport ? `${origin} (${originAirport})` : origin;
+    const destDisplay = destAirport ? `${destination} (${destAirport})` : destination;
+
     // Build structured message for orchestrator
     const nights = Math.round((new Date(checkout) - new Date(checkin)) / (1000*60*60*24));
     const summary = `TRIP_FORM:${JSON.stringify({
-        origin, destination, checkin, checkout,
+        origin, destination,
+        origin_iata: originAirport || null,
+        destination_iata: destAirport || null,
+        checkin, checkout,
         budget: parseFloat(budget),
         travelers: tNum,
         nonstop_preferred: nonstop === 'yes',
@@ -244,7 +304,7 @@ function submitTripForm() {
     })}`;
 
     // Show summary to user
-    const userSummary = `From: ${origin} → ${destination}\nDates: ${checkin} to ${checkout} (${nights} nights)\nBudget: $${parseFloat(budget).toLocaleString()} | Travelers: ${tNum} | Non-stop: ${nonstop === 'yes' ? 'Yes' : 'No'}`;
+    const userSummary = `From: ${originDisplay} → ${destDisplay}\nDates: ${checkin} to ${checkout} (${nights} nights)\nBudget: $${parseFloat(budget).toLocaleString()} | Travelers: ${tNum} | Non-stop: ${nonstop === 'yes' ? 'Yes' : 'No'}`;
     addMessage(userSummary, 'user');
 
     callAPI(summary);
@@ -409,34 +469,76 @@ function parseSections(raw) {
     const text = raw.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
     const lines = text.split('\n');
     let current = null, buffer = [];
-    const flush = () => { if (current && buffer.length) sections[current] = buffer.join('\n').trim(); buffer = []; };
+
+    const flush = () => {
+        if (current && buffer.length) {
+            sections[current] = buffer.join('\n').trim();
+        }
+        buffer = [];
+    };
+
     for (const line of lines) {
         const l = line.trim();
-        if (/✈️.*Available Flights|### ✈️|Flight.*Options/i.test(l)) { flush(); current='flights'; continue; }
-        if (/🏨.*Available Hotels|### 🏨|Hotel.*Options/i.test(l)) { flush(); current='hotels'; continue; }
-        if (/🌤️.*Weather|### 🌤️|Weather.*Forecast/i.test(l)) { flush(); current='weather'; continue; }
-        if (/Day-by-Day Itinerary|📋.*Itinerary|Complete.*Itinerary/i.test(l)) { flush(); current='itinerary'; continue; }
-        if (/Budget Summary|💰.*Budget|Budget Breakdown/i.test(l)) { flush(); current='budget_raw'; continue; }
-        if (/Travel Tips|Local Tips|Packing|💡|🎒/i.test(l) && current !== 'itinerary') { flush(); current='tips'; continue; }
+
+        // Match exact headers from orchestrator/agent output
+        // Flights: "### ✈️ Available Flights"
+        if (/###.*✈️.*Available Flights|###.*Flight.*Options/i.test(l)) {
+            flush(); current = 'flights'; continue;
+        }
+        // Hotels: "### 🏨 Available Hotels"
+        if (/###.*🏨.*Available Hotels|###.*Hotel.*Options/i.test(l)) {
+            flush(); current = 'hotels'; continue;
+        }
+        // Weather: "### 🌤️ Weather for"
+        if (/###.*🌤️.*Weather|###.*Weather.*Forecast/i.test(l)) {
+            flush(); current = 'weather'; continue;
+        }
+        // Itinerary: "## 📋 Your Complete Day-by-Day Itinerary"
+        if (/##.*📋.*Itinerary|##.*Day-by-Day Itinerary|##.*Complete.*Itinerary/i.test(l)) {
+            flush(); current = 'itinerary'; continue;
+        }
+        // Budget
+        if (/Budget Summary|💰.*Budget|Budget Breakdown/i.test(l)) {
+            flush(); current = 'budget_raw'; continue;
+        }
+        // Tips — only outside itinerary
+        if (current !== 'itinerary' && /Travel Tips|Local Tips|Packing|💡.*Tips|🎒/i.test(l)) {
+            flush(); current = 'tips'; continue;
+        }
+        // Skip dividers
         if (/^---+$/.test(l)) continue;
+
         if (current) buffer.push(line);
     }
     flush();
+
+    // Build summaries for top cards
     if (sections.flights) {
-        const m = sections.flights.match(/Recommended Flight.*?(?:\n|$)/);
-        sections.flight_summary = m ? m[0].replace(/✅|\*\*/g,'').replace('Recommended Flight:','').trim() : sections.flights.split('\n').find(l=>l.trim().length>10)?.replace(/[#*✅🏆]/g,'').trim()||'';
+        const m = sections.flights.match(/✅.*Recommended Flight[:\s]+(.+?)(?:\n|$)/i);
+        sections.flight_summary = m
+            ? m[1].replace(/\*\*/g,'').trim()
+            : sections.flights.split('\n').find(l=>l.trim().length>10)?.replace(/[#*✅🏆]/g,'').trim()||'';
     }
     if (sections.hotels) {
-        const m = sections.hotels.match(/Recommended Hotel.*?(?:\n|$)/);
-        sections.hotel_summary = m ? m[0].replace(/✅|\*\*/g,'').replace('Recommended Hotel:','').trim() : sections.hotels.split('\n').find(l=>l.trim().length>10)?.replace(/[#*✅🏆]/g,'').trim()||'';
+        const m = sections.hotels.match(/✅.*Recommended Hotel[:\s]+(.+?)(?:\n|$)/i);
+        sections.hotel_summary = m
+            ? m[1].replace(/\*\*/g,'').trim()
+            : sections.hotels.split('\n').find(l=>l.trim().length>10)?.replace(/[#*✅🏆]/g,'').trim()||'';
     }
     if (sections.weather) {
-        const m = sections.weather.match(/Now:.*?(?:\n|$)/);
-        sections.weather_summary = m ? m[0].replace('Now:','').trim() : sections.weather.split('\n').find(l=>l.trim().length>10)?.replace(/[#*]/g,'').trim()||'';
+        const m = sections.weather.match(/\*\*Now:\*\*(.+?)(?:\n|$)/i) ||
+                  sections.weather.match(/Now:(.+?)(?:\n|$)/i);
+        sections.weather_summary = m
+            ? m[1].replace(/\*\*/g,'').trim()
+            : sections.weather.split('\n').find(l=>l.trim().length>10)?.replace(/[#*]/g,'').trim()||'';
     }
+    // Budget summary from itinerary
     const budgetSource = sections.budget_raw || sections.itinerary || '';
-    const budgetLines = budgetSource.split('\n').filter(l => /flight|hotel|food|total|budget|remain|activit/i.test(l) && /\$/.test(l)).slice(0,5);
+    const budgetLines = budgetSource.split('\n')
+        .filter(l => /flight|hotel|food|total|budget|remain|activit/i.test(l) && /\$/.test(l))
+        .slice(0, 5);
     sections.budget_summary = budgetLines.join('<br>').replace(/\*\*/g,'');
+
     return sections;
 }
 
