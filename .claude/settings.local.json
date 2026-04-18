@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(python app.py)",
+      "Bash(curl *)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

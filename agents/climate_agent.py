@@ -260,7 +260,9 @@ class ClimateAgent:
             "forecast": forecast,
             "source": "seasonal_estimate"
         }
-        """Estimate UV from OWM weather condition ID."""
+
+    def _uv_from_id(self, weather_id: int) -> int:
+        """Estimate UV index from OWM weather condition ID."""
         if weather_id >= 800: return 8  # Clear/sunny
         if weather_id >= 700: return 3  # Atmosphere
         if weather_id >= 600: return 2  # Snow

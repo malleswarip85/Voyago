@@ -4,6 +4,7 @@ Multi-Agent AI Travel Planning System
 """
 from flask import Flask, render_template, request, jsonify, session, send_file
 from flask_cors import CORS
+from extensions import db, jwt
 from dotenv import load_dotenv
 import os, uuid, json
 
@@ -24,6 +25,20 @@ app.secret_key = secret
 app.config["SESSION_COOKIE_SECURE"] = os.getenv("RAILWAY_ENVIRONMENT") is not None
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# JWT config
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "voyago-jwt-secret-change-this-in-prod!!")
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_COOKIE_SECURE"] = os.getenv("RAILWAY_ENVIRONMENT") is not None
+app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False  # tokens don't expire (simplicity for MVP)
+
+# Database config
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///voyago.db")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+jwt.init_app(app)
 
 CORS(app)
 
@@ -102,6 +117,13 @@ def reset():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "Voyago Travel AI"})
+
+from auth_routes import auth_bp
+app.register_blueprint(auth_bp)
+
+with app.app_context():
+    from models import User  # noqa: F401 — ensures model is registered before create_all
+    db.create_all()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))

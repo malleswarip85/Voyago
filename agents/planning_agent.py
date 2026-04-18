@@ -84,7 +84,6 @@ class PlanningAgent:
         for d in weather_data.get("forecast", [])[:3]:
             forecast_str += f"\n  - {d.get('date','')}: {d.get('condition','')} | {d.get('max_temp_c','?')}°C max | Rain: {d.get('rain_chance','?')}%"
 
-        flight_cost = flight_data["flights"][0]["total_price"] if flight_data.get("flights") else 0
         if not hotel_data.get("hotels"):
             hotel_cost = 0
             hotel_rooms = 1
@@ -127,6 +126,13 @@ BUDGET BREAKDOWN:
 - Remaining for Food/Activities: ${max(0, remaining):,.2f}
 ═══════════════════════════════════════
 
+DESTINATION EXPLORATION REQUIREMENTS:
+- Include famous landmarks and iconic attractions IN {dest} itself
+- Include at least 2-3 day trips to famous nearby places/cities within 1-3 hours (e.g., Versailles from Paris, Nikko from Tokyo, Agra/Taj Mahal from Delhi)
+- Include neighborhood-by-neighborhood exploration (local districts, markets, old towns)
+- Include unique local experiences (street food markets, cooking classes, temple visits, scenic viewpoints)
+- Spread different types of experiences across the days (culture, food, nature, shopping, nightlife)
+
 Create the itinerary in this EXACT format:
 
 ## 💰 Budget Summary
@@ -135,42 +141,49 @@ Show exact breakdown using the numbers above. Calculate daily food/activity budg
 ## ✈️ Flight & Hotel Confirmed
 State the recommended flight and hotel from the real data above.
 
+## 🗺️ Destination Overview — {dest}
+Write 2-3 sentences: what makes {dest} special, best areas to explore, and what type of traveler will love it most.
+
+### 📍 Famous Nearby Day Trips
+List 3-5 famous places within 1-3 hours of {dest} worth visiting (e.g., historical sites, natural wonders, nearby cities). Include how to get there and approximate travel time.
+
 ## 🗓️ Day-by-Day Itinerary
 
 For EACH of the {nights} days, provide:
 
-### Day [N] — [Date] — [Theme e.g. "Arrival & Exploration"]
+### Day [N] — [Date] — [Theme e.g. "Old City Exploration" / "Versailles Day Trip" / "Local Markets & Cuisine"]
 
 **🌅 Morning (7:00 AM – 12:00 PM)**
-- Specific activity with real location name
+- Specific activity with real location name and neighborhood
 - Estimated cost: $X
-- Travel tip
+- Pro tip or insider advice
 
-**☀️ Afternoon (12:00 PM – 6:00 PM)**  
-- Specific restaurant recommendation with cuisine type
+**☀️ Afternoon (12:00 PM – 6:00 PM)**
+- Specific restaurant recommendation with cuisine type and neighborhood
 - Lunch estimated cost: $X per person
 - Afternoon activity with real attraction name
 - Estimated cost: $X
 
 **🌙 Evening (6:00 PM – 10:00 PM)**
-- Dinner restaurant recommendation
+- Dinner restaurant recommendation (local specialty)
 - Estimated cost: $X per person
-- Evening activity or relaxation
+- Evening activity or cultural experience
 
 **💸 Day [N] Total Estimate: $X**
 
-[Repeat for all {nights} days]
+[Repeat for all {nights} days. Vary the themes — mix iconic sights, day trips, local neighborhoods, food experiences]
 
 ## 🎒 Packing List
 Based on the actual weather data: {weather_str}
-List 10-15 specific items.
+List 10-15 specific items tailored to the activities planned.
 
 ## 💡 Local Tips for {dest}
-- 5 practical tips specific to this destination
-- Best local transport options
+- 5 practical insider tips specific to this destination
+- Best local transport options (metro, tuk-tuk, train, etc.)
 - Currency/payment tips
 - Safety tips
-- Cultural etiquette
+- Cultural etiquette & dress code
+- Best time of day to visit top attractions (avoid crowds)
 
 ## 📊 Final Budget Tracker
 | Category | Budgeted | Estimated Spend |
@@ -178,12 +191,12 @@ List 10-15 specific items.
 | Flights | ${flight_cost:,.2f} | ${flight_cost:,.2f} |
 | Hotel | ${hotel_cost:,.2f} | ${hotel_cost:,.2f} |
 | Food ({nights} days) | $X | $X |
-| Activities | $X | $X |
-| Transport | $X | $X |
+| Activities & Attractions | $X | $X |
+| Day Trips & Transport | $X | $X |
 | Shopping/Misc | $X | $X |
 | **TOTAL** | **${budget:,.2f}** | **$X** |
 
-Be specific, practical and enthusiastic. Use real place names for {dest}. Make each day feel unique and exciting!
+Be specific, enthusiastic, and practical. Use REAL place names, neighborhoods, and landmarks for {dest} and surroundings. Every day should feel distinct and exciting!
 """
 
         try:

@@ -367,46 +367,93 @@ class HotelAgent:
     def format_for_display(self, data, nights, budget=0):
         if not data.get("hotels"):
             return "❌ No hotels found."
+
         hotels = data["hotels"]
         rooms = data.get("rooms", 1)
         search_city = data.get("search_city", "")
         airport_code = data.get("airport_code", "")
-        src = "*(live data — Google Hotels)*" if data.get("source") == "live" \
-              else "*(estimated — verify on Booking.com)*"
+        is_live = data.get("source") == "live"
+        source_txt = "✓ Live data — Google Hotels" if is_live else "~ Estimated — verify on Booking.com"
+        location_note = f"near {airport_code} airport · {search_city}" if airport_code else search_city
 
-        location_note = f"near **{airport_code}** airport in **{search_city}**" \
-                        if airport_code else f"in **{search_city}**"
+        best_idx = self.recommend(hotels, nights, budget)
+        bh = hotels[best_idx]
+        bt = self.total_cost(bh, nights)
+        reason = "best rated within budget" if bt <= budget * 0.45 else "most affordable"
+        summary = (f"{bh['name']} ({'⭐' * int(bh.get('stars', 3))}) — "
+                   f"${bt:,.0f} total · {nights} nights · {reason}")
 
-        best = self.recommend(hotels, nights, budget)
-        lines = [
-            f"### 🏨 Available Hotels {src}",
-            f"*Top hotels {location_note} · {rooms} room(s) · {nights} nights*\n"
-        ]
-
+        cards = []
         for i, h in enumerate(hotels):
-            stars = "⭐" * int(h.get("stars", 3))
             total = self.total_cost(h, nights)
-            amenities = ", ".join(h.get("amenities", [])[:4])
-            badge = " 🏆 **BEST PICK**" if i == best else ""
-            pct = f" *({total/budget*100:.0f}% of budget)*" if budget else ""
-            link = f" · <a href='{h['link']}' target='_blank' style='color:#3b82f6;font-weight:600;'>🔗 View Hotel</a>" if h.get("link") else ""
+            is_best = (i == best_idx)
+            stars_str = "⭐" * int(h.get("stars", 3))
+            rating = h.get("rating", 7.0)
+            reviews = h.get("review_count", 0)
+            amenities = h.get("amenities", [])[:4]
+            amenity_pills = "".join(
+                f'<span style="background:rgba(14,116,144,0.08);color:var(--sky-mid,#0e7490);'
+                f'border-radius:10px;padding:2px 7px;font-size:10px;white-space:nowrap;">{a}</span>'
+                for a in amenities
+            )
+            pct_txt = f" · {total/budget*100:.0f}% of budget" if budget else ""
             budget_label = h.get("budget_label", "")
+            location = h.get("location", search_city)
+            live_dot = '<span style="color:#16a34a;font-size:9px;">●</span> Live' if h.get("source") == "live" else "~ Est."
 
-            lines.append(
-                f"**Option {i+1}: {h['name']}** {stars}{badge} {budget_label}\n"
-                f"  • Rating: **{h['rating']}/10** ({h.get('review_count',0):,} reviews)\n"
-                f"  • 📍 {h['location']}{link}\n"
-                f"  • ${h['price_per_night_per_room']:,.2f}/night × {rooms} room(s) × {nights} nights\n"
-                f"  • **Total: ${total:,.2f}**{pct}\n"
-                f"  • Amenities: {amenities}\n"
+            link_html = ""
+            if h.get("link"):
+                link_html = (f'<a href="{h["link"]}" target="_blank" style="font-size:11px;font-weight:600;'
+                             f'color:var(--sky-mid,#0e7490);text-decoration:none;padding:3px 8px;'
+                             f'border:1px solid var(--border,rgba(14,116,144,0.15));border-radius:6px;">'
+                             f'View Hotel →</a>')
+
+            border_style = "border-color:#d97706;" if is_best else ""
+            header_bg = "background:rgba(255,251,235,0.9);" if is_best else "background:rgba(240,253,250,0.6);"
+            best_badge = (
+                '<span style="background:rgba(217,119,6,0.12);color:#92400e;border:1px solid rgba(217,119,6,0.25);'
+                'border-radius:12px;padding:2px 7px;font-size:9.5px;font-weight:700;margin-left:3px;">'
+                '🏆 Best Pick</span>'
+                if is_best else ""
             )
 
-        bh = hotels[best]
-        bt = self.total_cost(bh, nights)
-        reason = "best rated within budget" if bt <= budget*0.45 else "cheapest available"
-        lines.append(
-            f"\n✅ **Recommended Hotel:** {bh['name']} "
-            f"({'⭐'*int(bh.get('stars',3))}) — "
-            f"**${bt:,.2f}** total for {nights} nights *({reason})*"
-        )
-        return "\n".join(lines)
+            # Rating color
+            rating_color = "#16a34a" if rating >= 8 else ("#d97706" if rating >= 6.5 else "#dc2626")
+
+            cards.append(f"""
+<div style="background:var(--bg-white,#fff);border:1.5px solid var(--border,rgba(14,116,144,0.15));{border_style}border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm,0 2px 8px rgba(12,92,107,0.05));">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;{header_bg}border-bottom:1px solid var(--border,rgba(14,116,144,0.08));">
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+        <span style="font-size:12.5px;font-weight:700;color:var(--sky-deep,#0c5c6b);">{h['name']}</span>
+        {best_badge}
+      </div>
+      <div style="font-size:11px;color:var(--text-muted,#a16207);margin-top:2px;">{stars_str} {budget_label}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+      <div style="font-size:15px;font-weight:700;color:var(--sky-deep,#0c5c6b);">${total:,.0f}</div>
+      <div style="font-size:10px;color:var(--text-muted,#a16207);">${h['price_per_night_per_room']:,.0f}/night{pct_txt}</div>
+    </div>
+  </div>
+  <div style="padding:12px 14px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="background:{rating_color};color:white;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;">{rating}/10</span>
+      <span style="font-size:11px;color:var(--text-muted,#a16207);">{reviews:,} reviews</span>
+      <span style="font-size:11px;color:var(--text-muted,#a16207);">📍 {location}</span>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">{amenity_pills}</div>
+    <div style="font-size:10.5px;color:var(--text-muted,#a16207);">{rooms} room(s) × {nights} nights</div>
+  </div>
+  <div style="padding:8px 14px 10px;border-top:1px solid var(--border,rgba(14,116,144,0.08));display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:10.5px;color:var(--text-muted,#a16207);">{live_dot}</span>
+    {link_html}
+  </div>
+</div>""")
+
+        return (f'<div data-summary="{summary}" style="display:flex;flex-direction:column;gap:8px;">'
+                f'<div style="font-size:10.5px;color:var(--text-muted,#a16207);margin-bottom:2px;">'
+                f'{source_txt} · {rooms} room(s) · {location_note}</div>'
+                + "".join(cards) +
+                f'<div style="font-size:12px;font-weight:600;color:var(--sky-deep,#0c5c6b);padding:6px 2px 0;">'
+                f'✅ Recommended: {summary}</div>'
+                f'</div>')
